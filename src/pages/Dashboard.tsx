@@ -1,14 +1,9 @@
+import { useState, useEffect } from "react";
 import { BookOpen, Brain, Clock, Library, MessageSquare, Sparkles, FileText, Globe } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import { useAuth } from "@/contexts/AuthContext";
-
-const stats = [
-  { label: "Study Time", value: "12.5h", change: "+0.8h", icon: Clock },
-  { label: "Quizzes Taken", value: "24", change: "+2", icon: Brain },
-  { label: "Flashcards", value: "156", change: "+12", icon: BookOpen },
-  { label: "Content Items", value: "8", change: "+1", icon: Library },
-];
+import { supabase } from "@/integrations/supabase/client";
 
 const quickActions = [
   { title: "Generate Summary", desc: "AI-powered content summaries", icon: FileText, path: "/library", color: "from-primary to-purple-500" },
@@ -22,9 +17,59 @@ const quickActions = [
 const container = { hidden: {}, show: { transition: { staggerChildren: 0.06 } } };
 const item = { hidden: { opacity: 0, y: 12 }, show: { opacity: 1, y: 0 } };
 
+function formatDuration(seconds: number): string {
+  if (seconds < 60) return `${seconds}s`;
+  if (seconds < 3600) return `${Math.round(seconds / 60)}m`;
+  const h = seconds / 3600;
+  return `${h.toFixed(1)}h`;
+}
+
 export default function Dashboard() {
   const navigate = useNavigate();
   const { user } = useAuth();
+  const [stats, setStats] = useState({
+    studyTime: 0,
+    quizzesTaken: 0,
+    flashcardsReviewed: 0,
+    contentItems: 0,
+  });
+  const [currentTime, setCurrentTime] = useState(new Date());
+
+  useEffect(() => {
+    const timer = setInterval(() => setCurrentTime(new Date()), 1000);
+    return () => clearInterval(timer);
+  }, []);
+
+  useEffect(() => {
+    if (!user) return;
+    const fetchStats = async () => {
+      const [contentRes, sessionsRes] = await Promise.all([
+        supabase.from("content_sources").select("id", { count: "exact", head: true }).eq("user_id", user.id),
+        supabase.from("study_sessions").select("*").eq("user_id", user.id),
+      ]);
+
+      const sessions = sessionsRes.data || [];
+      const totalTime = sessions.reduce((sum, s) => sum + (s.duration_seconds || 0), 0);
+      const quizzes = sessions.filter(s => s.session_type === "quiz").length;
+      const flashcards = sessions.filter(s => s.session_type === "flashcard")
+        .reduce((sum, s) => sum + (s.items_count || 0), 0);
+
+      setStats({
+        studyTime: totalTime,
+        quizzesTaken: quizzes,
+        flashcardsReviewed: flashcards,
+        contentItems: contentRes.count || 0,
+      });
+    };
+    fetchStats();
+  }, [user]);
+
+  const statCards = [
+    { label: "Study Time", value: formatDuration(stats.studyTime), icon: Clock },
+    { label: "Quizzes Taken", value: String(stats.quizzesTaken), icon: Brain },
+    { label: "Flashcards", value: String(stats.flashcardsReviewed), icon: BookOpen },
+    { label: "Content Items", value: String(stats.contentItems), icon: Library },
+  ];
 
   return (
     <motion.div variants={container} initial="hidden" animate="show" className="space-y-6">
@@ -32,17 +77,20 @@ export default function Dashboard() {
         <h1 className="font-heading text-2xl font-bold text-foreground">
           Welcome back, {user?.user_metadata?.name || "Student"} 👋
         </h1>
-        <p className="text-muted-foreground mt-1">Here's your learning overview</p>
+        <p className="text-muted-foreground mt-1">
+          {currentTime.toLocaleDateString(undefined, { weekday: "long", year: "numeric", month: "long", day: "numeric" })}
+          {" · "}
+          {currentTime.toLocaleTimeString(undefined, { hour: "2-digit", minute: "2-digit", second: "2-digit" })}
+        </p>
       </motion.div>
 
       <motion.div variants={item} className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        {stats.map((s) => (
+        {statCards.map((s) => (
           <div key={s.label} className="rounded-2xl border border-border bg-card p-4 hover:shadow-glow transition-shadow">
             <div className="flex items-center justify-between mb-3">
               <div className="p-2 rounded-xl bg-primary/10">
                 <s.icon className="h-4 w-4 text-primary" />
               </div>
-              <span className="text-xs text-success font-medium">{s.change}</span>
             </div>
             <p className="font-heading text-2xl font-bold text-foreground">{s.value}</p>
             <p className="text-xs text-muted-foreground mt-1">{s.label}</p>

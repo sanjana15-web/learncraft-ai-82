@@ -88,6 +88,8 @@ export default function ContentLibrary() {
     else { toast.success("Deleted"); fetchContents(); }
   };
 
+  const [uploading, setUploading] = useState(false);
+
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file || !user) return;
@@ -95,12 +97,32 @@ export default function ContentLibrary() {
       toast.error("Only PDF and text files are supported");
       return;
     }
-    const text = await file.text();
-    const { error } = await supabase.from("content_sources").insert({
-      user_id: user.id, title: file.name, content: text, source_type: "file",
-    });
-    if (error) toast.error("Failed to upload");
-    else { toast.success("File uploaded!"); fetchContents(); }
+    setUploading(true);
+    try {
+      let text: string;
+      if (file.type === "application/pdf") {
+        // Use edge function to parse PDF
+        const formData = new FormData();
+        formData.append("file", file);
+        const { data, error } = await supabase.functions.invoke("parse-pdf", { body: formData });
+        if (error) throw error;
+        if (data.error) throw new Error(data.error);
+        text = data.text;
+      } else {
+        text = await file.text();
+      }
+      const { error } = await supabase.from("content_sources").insert({
+        user_id: user.id, title: file.name, content: text, source_type: file.type === "application/pdf" ? "pdf" : "file",
+      });
+      if (error) throw error;
+      toast.success("File uploaded!");
+      fetchContents();
+    } catch (err: any) {
+      toast.error(err.message || "Failed to upload file");
+    }
+    setUploading(false);
+    // Reset input
+    e.target.value = "";
   };
 
   return (

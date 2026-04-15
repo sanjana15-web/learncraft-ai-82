@@ -55,6 +55,8 @@ export default function Quiz() {
     setGenerating(false);
   };
 
+  const [startTime] = useState(Date.now());
+
   const handleAnswer = (key: string) => {
     if (showResult) return;
     setSelected(key);
@@ -62,8 +64,26 @@ export default function Quiz() {
     if (key === questions[currentQ].correct) setScore(s => s + 1);
   };
 
+  const recordSession = async (finalScore: number) => {
+    if (!user) return;
+    const duration = Math.round((Date.now() - startTime) / 1000);
+    await supabase.from("study_sessions").insert({
+      user_id: user.id,
+      session_type: "quiz",
+      duration_seconds: duration,
+      score: finalScore,
+      items_count: questions.length,
+      content_source_id: selectedContent || null,
+    });
+  };
+
   const nextQuestion = () => {
-    if (currentQ + 1 >= questions.length) { setQuizDone(true); return; }
+    if (currentQ + 1 >= questions.length) {
+      const finalScore = score + (selected === questions[currentQ]?.correct ? 1 : 0);
+      setQuizDone(true);
+      recordSession(finalScore);
+      return;
+    }
     setCurrentQ(q => q + 1);
     setSelected(null);
     setShowResult(false);

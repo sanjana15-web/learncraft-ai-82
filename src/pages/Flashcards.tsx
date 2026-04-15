@@ -26,11 +26,26 @@ export default function Flashcards() {
     supabase.from("content_sources").select("id, title, content").eq("user_id", user.id).then(({ data }) => setContents(data || []));
   }, [user]);
 
+  const [startTime, setStartTime] = useState(Date.now());
+
+  const recordSession = async (cardCount: number) => {
+    if (!user) return;
+    const duration = Math.round((Date.now() - startTime) / 1000);
+    await supabase.from("study_sessions").insert({
+      user_id: user.id,
+      session_type: "flashcard",
+      duration_seconds: duration,
+      items_count: cardCount,
+      content_source_id: selectedContent || null,
+    });
+  };
+
   const generate = async () => {
     if (!selectedContent) { toast.error("Select content first"); return; }
     const c = contents.find(x => x.id === selectedContent);
     if (!c) return;
     setGenerating(true);
+    setStartTime(Date.now());
     try {
       const { data, error } = await supabase.functions.invoke("ai-flashcards", { body: { content: c.content, numCards: parseInt(numCards) } });
       if (error) throw error;
@@ -42,6 +57,13 @@ export default function Flashcards() {
     }
     setGenerating(false);
   };
+
+  // Record session when user finishes all cards
+  useEffect(() => {
+    if (cards.length > 0 && current === cards.length - 1 && flipped) {
+      recordSession(cards.length);
+    }
+  }, [current, flipped, cards.length]);
 
   const prev = () => { setCurrent(c => Math.max(0, c - 1)); setFlipped(false); };
   const next = () => { setCurrent(c => Math.min(cards.length - 1, c + 1)); setFlipped(false); };
