@@ -5,6 +5,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { AuthProvider, useAuth } from "@/contexts/AuthContext";
 import { AppLayout } from "@/components/layout/AppLayout";
+import Landing from "@/pages/Landing";
 import Auth from "@/pages/Auth";
 import Dashboard from "@/pages/Dashboard";
 import ContentLibrary from "@/pages/ContentLibrary";
@@ -37,7 +38,7 @@ const App = () => (
       <BrowserRouter>
         <AuthProvider>
           <Routes>
-            <Route path="/" element={<Navigate to="/dashboard" replace />} />
+            <Route path="/" element={<PublicRoute><Landing /></PublicRoute>} />
             <Route path="/auth" element={<PublicRoute><Auth /></PublicRoute>} />
             <Route element={<ProtectedRoute><AppLayout /></ProtectedRoute>}>
               <Route path="/dashboard" element={<Dashboard />} />
