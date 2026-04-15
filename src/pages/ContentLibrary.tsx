@@ -148,8 +148,10 @@ export default function ContentLibrary() {
             </DialogContent>
           </Dialog>
           <label>
-            <input type="file" accept=".pdf,.txt,.md" className="hidden" onChange={handleFileUpload} />
-            <Button variant="outline" size="sm" asChild><span><FileText className="h-4 w-4 mr-2" />Upload File</span></Button>
+            <input type="file" accept=".pdf,.txt,.md" className="hidden" onChange={handleFileUpload} disabled={uploading} />
+            <Button variant="outline" size="sm" asChild disabled={uploading}>
+              <span>{uploading ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <FileText className="h-4 w-4 mr-2" />}{uploading ? "Uploading..." : "Upload File"}</span>
+            </Button>
           </label>
           <Dialog open={open} onOpenChange={setOpen}>
             <DialogTrigger asChild>
