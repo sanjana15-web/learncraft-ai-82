@@ -44,6 +44,47 @@ export type Database = {
         }
         Relationships: []
       }
+      study_sessions: {
+        Row: {
+          content_source_id: string | null
+          created_at: string
+          duration_seconds: number
+          id: string
+          items_count: number | null
+          score: number | null
+          session_type: string
+          user_id: string
+        }
+        Insert: {
+          content_source_id?: string | null
+          created_at?: string
+          duration_seconds?: number
+          id?: string
+          items_count?: number | null
+          score?: number | null
+          session_type: string
+          user_id: string
+        }
+        Update: {
+          content_source_id?: string | null
+          created_at?: string
+          duration_seconds?: number
+          id?: string
+          items_count?: number | null
+          score?: number | null
+          session_type?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "study_sessions_content_source_id_fkey"
+            columns: ["content_source_id"]
+            isOneToOne: false
+            referencedRelation: "content_sources"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
