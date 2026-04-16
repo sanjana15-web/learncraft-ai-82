@@ -1,17 +1,18 @@
-import { corsHeaders } from "@supabase/supabase-js/cors";
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+const corsHeaders = {
+  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Headers":
+    "authorization, x-client-info, apikey, content-type",
+};
 
 // Simple PDF text extraction - handles most text-based PDFs
 function extractTextFromPdf(bytes: Uint8Array): string {
   const text = new TextDecoder("latin1").decode(bytes);
   const textObjects: string[] = [];
 
-  // Extract text between BT and ET markers (PDF text objects)
   const btEtRegex = /BT\s([\s\S]*?)ET/g;
   let match;
   while ((match = btEtRegex.exec(text)) !== null) {
     const block = match[1];
-    // Extract strings in parentheses (literal strings)
     const strRegex = /\(([^)]*)\)/g;
     let strMatch;
     while ((strMatch = strRegex.exec(block)) !== null) {
@@ -23,7 +24,6 @@ function extractTextFromPdf(bytes: Uint8Array): string {
         .replace(/\\([()])/g, "$1");
       if (decoded.trim()) textObjects.push(decoded);
     }
-    // Extract hex strings
     const hexRegex = /<([0-9A-Fa-f\s]+)>/g;
     let hexMatch;
     while ((hexMatch = hexRegex.exec(block)) !== null) {
@@ -58,9 +58,7 @@ Deno.serve(async (req) => {
     const bytes = new Uint8Array(await file.arrayBuffer());
     let text = extractTextFromPdf(bytes);
 
-    // If our simple parser got very little, try a basic stream decode
     if (text.length < 50) {
-      // Fallback: extract any readable ASCII sequences
       const raw = new TextDecoder("latin1").decode(bytes);
       const readable = raw.match(/[A-Za-z][A-Za-z0-9\s.,;:!?'"()-]{10,}/g) || [];
       text = readable.join(" ").trim();
