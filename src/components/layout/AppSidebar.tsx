@@ -1,4 +1,4 @@
-import { BookOpen, Brain, GraduationCap, LayoutDashboard, MessageSquare, Library, Sparkles } from "lucide-react";
+import { BookOpen, Brain, GraduationCap, LayoutDashboard, MessageSquare, Library, Sparkles, Headphones } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
 import { useLocation } from "react-router-dom";
 import {
@@ -14,6 +14,7 @@ const items = [
   { title: "Content Library", url: "/library", icon: Library },
   { title: "Quiz", url: "/quiz", icon: Brain },
   { title: "Flashcards", url: "/flashcards", icon: BookOpen },
+  { title: "Audio Summary", url: "/audio-summary", icon: Headphones },
   { title: "Chatbot", url: "/chat", icon: MessageSquare },
 ];
 
