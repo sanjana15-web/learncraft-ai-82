@@ -32,8 +32,9 @@ Deno.serve(async (req) => {
     };
     const targetLen = lengthMap[length] || lengthMap.medium;
 
-    // Truncate very long input to keep it within model limits
-    const trimmed = content.length > 30000 ? content.slice(0, 30000) : content;
+    // Truncate very long input to keep it within model limits and avoid timeouts
+    const MAX_CHARS = 12000;
+    const trimmed = content.length > MAX_CHARS ? content.slice(0, MAX_CHARS) : content;
 
     const systemPrompt = `You are a study narrator creating an audio summary. Write a clear, conversational, spoken-style summary that flows naturally when read aloud.
 
