@@ -6,7 +6,8 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { Plus, FileText, Brain, BookOpen, MessageSquare, Loader2, Trash2, Globe } from "lucide-react";
+import { Plus, FileText, Brain, BookOpen, MessageSquare, Loader2, Trash2, Globe, Eye } from "lucide-react";
+import { ScrollArea } from "@/components/ui/scroll-area";
 import { toast } from "sonner";
 import { motion } from "framer-motion";
 import { useNavigate } from "react-router-dom";
@@ -31,6 +32,7 @@ export default function ContentLibrary() {
   const [content, setContent] = useState("");
   const [url, setUrl] = useState("");
   const [scraping, setScraping] = useState(false);
+  const [viewing, setViewing] = useState<ContentSource | null>(null);
 
   const fetchContents = async () => {
     if (!user) return;
@@ -198,6 +200,7 @@ export default function ContentLibrary() {
                   <p className="text-xs text-muted-foreground mt-2">{new Date(c.created_at).toLocaleDateString()}</p>
                 </div>
                 <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity ml-4">
+                  <Button variant="ghost" size="icon" onClick={() => setViewing(c)} title="View Content"><Eye className="h-4 w-4" /></Button>
                   <Button variant="ghost" size="icon" onClick={() => navigate(`/quiz?contentId=${c.id}`)} title="Generate Quiz"><Brain className="h-4 w-4" /></Button>
                   <Button variant="ghost" size="icon" onClick={() => navigate(`/flashcards?contentId=${c.id}`)} title="Generate Flashcards"><BookOpen className="h-4 w-4" /></Button>
                   <Button variant="ghost" size="icon" onClick={() => navigate(`/chat?contentId=${c.id}`)} title="Chat about this"><MessageSquare className="h-4 w-4" /></Button>
@@ -208,6 +211,26 @@ export default function ContentLibrary() {
           ))}
         </div>
       )}
+
+      <Dialog open={!!viewing} onOpenChange={(o) => !o && setViewing(null)}>
+        <DialogContent className="max-w-3xl max-h-[80vh]">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2 pr-8">
+              <span className="truncate">{viewing?.title}</span>
+              {viewing && (
+                <span className="text-xs px-2 py-0.5 rounded-full bg-primary/10 text-primary capitalize shrink-0">
+                  {viewing.source_type}
+                </span>
+              )}
+            </DialogTitle>
+          </DialogHeader>
+          <ScrollArea className="max-h-[60vh] pr-4">
+            <pre className="whitespace-pre-wrap font-sans text-sm text-foreground leading-relaxed">
+              {viewing?.content}
+            </pre>
+          </ScrollArea>
+        </DialogContent>
+      </Dialog>
     </motion.div>
   );
 }
