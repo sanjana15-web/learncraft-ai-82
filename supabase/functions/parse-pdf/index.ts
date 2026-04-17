@@ -1,4 +1,4 @@
-import { getDocument } from "https://esm.sh/pdfjs-serverless@0.5.0";
+import { resolvePDFJS } from "https://esm.sh/pdfjs-serverless@0.5.0";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -25,6 +25,7 @@ Deno.serve(async (req) => {
 
     let fullText = "";
     try {
+      const { getDocument } = await resolvePDFJS();
       const pdf = await getDocument({
         data: bytes,
         useSystemFonts: true,
@@ -35,8 +36,8 @@ Deno.serve(async (req) => {
       for (let i = 1; i <= pdf.numPages; i++) {
         const page = await pdf.getPage(i);
         const textContent = await page.getTextContent();
-        const pageText = textContent.items
-          .map((item: any) => item.str)
+        const pageText = (textContent.items as any[])
+          .map((item) => item.str)
           .join(" ")
           .replace(/\s+/g, " ")
           .trim();
@@ -45,6 +46,12 @@ Deno.serve(async (req) => {
       fullText = pages.join("\n\n");
     } catch (parseErr) {
       console.error("pdfjs error:", parseErr);
+      return new Response(
+        JSON.stringify({
+          error: "Failed to parse PDF: " + ((parseErr as Error).message || String(parseErr)),
+        }),
+        { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
     }
 
     if (!fullText || fullText.trim().length < 10) {
