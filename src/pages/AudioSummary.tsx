@@ -73,14 +73,19 @@ export default function AudioSummary() {
     setSummary("");
     stopSpeaking();
     try {
+      // Trim very large content client-side to keep request small & fast
+      const MAX = 12000;
+      const payload = source.content.length > MAX ? source.content.slice(0, MAX) : source.content;
       const { data, error } = await supabase.functions.invoke("ai-summary", {
-        body: { content: source.content, length },
+        body: { content: payload, length },
       });
       if (error) throw error;
       if (data?.error) throw new Error(data.error);
+      if (!data?.summary) throw new Error("No summary returned");
       setSummary(data.summary);
       toast.success("Summary ready! Hit play to listen.");
     } catch (e: any) {
+      console.error("ai-summary error:", e);
       toast.error(e.message || "Failed to generate summary");
     }
     setGenerating(false);
