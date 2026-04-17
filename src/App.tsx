@@ -12,6 +12,7 @@ import ContentLibrary from "@/pages/ContentLibrary";
 import Quiz from "@/pages/Quiz";
 import Flashcards from "@/pages/Flashcards";
 import Chatbot from "@/pages/Chatbot";
+import AudioSummary from "@/pages/AudioSummary";
 import NotFound from "@/pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -45,6 +46,7 @@ const App = () => (
               <Route path="/library" element={<ContentLibrary />} />
               <Route path="/quiz" element={<Quiz />} />
               <Route path="/flashcards" element={<Flashcards />} />
+              <Route path="/audio-summary" element={<AudioSummary />} />
               <Route path="/chat" element={<Chatbot />} />
             </Route>
             <Route path="*" element={<NotFound />} />
