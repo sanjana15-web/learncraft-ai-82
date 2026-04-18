@@ -1,4 +1,5 @@
-import { BookOpen, Brain, GraduationCap, LayoutDashboard, MessageSquare, Library, Sparkles, Headphones } from "lucide-react";
+import { BookOpen, Brain, LayoutDashboard, MessageSquare, Library, Sparkles, Headphones } from "lucide-react";
+import logo from "@/assets/aiacademy-logo.jpeg";
 import { NavLink } from "@/components/NavLink";
 import { useLocation } from "react-router-dom";
 import {
@@ -28,8 +29,8 @@ export function AppSidebar() {
     <Sidebar collapsible="icon" className="border-r border-border">
       <SidebarHeader className="p-4">
         <div className="flex items-center gap-3">
-          <div className="gradient-primary rounded-xl p-2 shadow-glow">
-            <GraduationCap className="h-6 w-6 text-primary-foreground" />
+          <div className="rounded-xl overflow-hidden shadow-glow shrink-0">
+            <img src={logo} alt="AIacademy logo" className="h-10 w-10 object-cover" />
           </div>
           {!collapsed && (
             <div>

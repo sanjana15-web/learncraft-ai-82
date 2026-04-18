@@ -1,7 +1,8 @@
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { GraduationCap, Brain, MessageSquare, Layers, Zap, ArrowRight, Sparkles } from "lucide-react";
+import { Brain, MessageSquare, Layers, Zap, ArrowRight, Sparkles } from "lucide-react";
 import { motion } from "framer-motion";
+import logo from "@/assets/aiacademy-logo.jpeg";
 
 const features = [
   { icon: Brain, title: "AI Quizzes", desc: "Auto-generated multiple choice questions from your study material with instant feedback." },
@@ -22,8 +23,8 @@ export default function Landing() {
       <header className="sticky top-0 z-50 glass border-b border-border">
         <div className="max-w-6xl mx-auto flex items-center justify-between px-6 h-16">
           <div className="flex items-center gap-2">
-            <div className="gradient-primary rounded-xl p-2">
-              <GraduationCap className="h-5 w-5 text-primary-foreground" />
+            <div className="rounded-xl overflow-hidden">
+              <img src={logo} alt="AIacademy logo" className="h-9 w-9 object-cover" />
             </div>
             <span className="font-heading text-xl font-bold">AIacademy</span>
           </div>
