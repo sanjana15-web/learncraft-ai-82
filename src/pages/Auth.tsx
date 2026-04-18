@@ -4,9 +4,10 @@ import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { GraduationCap, Loader2 } from "lucide-react";
+import { Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { motion } from "framer-motion";
+import logo from "@/assets/aiacademy-logo.jpeg";
 
 export default function Auth() {
   const [isLogin, setIsLogin] = useState(true);
@@ -26,7 +27,7 @@ export default function Auth() {
         toast.success("Welcome back!");
       } else {
         await signUp(email, password, name);
-        toast.success("Account created! Check your email to verify.");
+        toast.success("Account created! Welcome aboard.");
       }
       navigate("/dashboard");
     } catch (err: any) {
@@ -44,8 +45,8 @@ export default function Auth() {
         className="w-full max-w-md"
       >
         <div className="text-center mb-8">
-          <div className="inline-flex gradient-primary rounded-2xl p-3 shadow-glow mb-4">
-            <GraduationCap className="h-8 w-8 text-primary-foreground" />
+          <div className="inline-block rounded-2xl overflow-hidden shadow-glow mb-4">
+            <img src={logo} alt="AIacademy logo" className="h-16 w-16 object-cover" />
           </div>
           <h1 className="font-heading text-3xl font-bold text-foreground">AIacademy</h1>
           <p className="text-muted-foreground mt-2">Your AI-powered learning assistant</p>
