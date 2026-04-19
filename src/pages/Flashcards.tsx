@@ -69,7 +69,7 @@ export default function Flashcards() {
   const next = () => { setCurrent(c => Math.min(cards.length - 1, c + 1)); setFlipped(false); };
 
   return (
-    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="max-w-2xl mx-auto space-y-6">
+    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="max-w-2xl mx-auto space-y-6 px-1 sm:px-0">
       <div>
         <h1 className="font-heading text-2xl font-bold text-foreground">Flashcards</h1>
         <p className="text-muted-foreground mt-1">Study with AI-generated flashcards</p>
@@ -104,25 +104,25 @@ export default function Flashcards() {
               animate={{ rotateY: flipped ? 180 : 0 }}
               transition={{ duration: 0.5 }}
               style={{ transformStyle: "preserve-3d" }}
-              className="relative h-72 w-full"
+              className="relative h-64 sm:h-72 w-full"
             >
-              <div className="absolute inset-0 rounded-2xl border border-border bg-card p-8 flex items-center justify-center shadow-glow backface-hidden"
+              <div className="absolute inset-0 rounded-2xl border border-border bg-card p-5 sm:p-8 flex items-center justify-center shadow-glow backface-hidden overflow-hidden"
                 style={{ backfaceVisibility: "hidden" }}>
-                <div className="text-center">
-                  <span className="text-xs text-primary font-medium mb-4 block">QUESTION</span>
-                  <p className="font-heading text-xl font-semibold text-foreground">{cards[current].front}</p>
+                <div className="text-center w-full max-h-full overflow-y-auto">
+                  <span className="text-xs text-primary font-medium mb-3 sm:mb-4 block">QUESTION</span>
+                  <p className="font-heading text-base sm:text-xl font-semibold text-foreground break-words">{cards[current].front}</p>
                 </div>
               </div>
-              <div className="absolute inset-0 rounded-2xl border border-primary/30 gradient-accent p-8 flex items-center justify-center backface-hidden"
+              <div className="absolute inset-0 rounded-2xl border border-primary/30 gradient-accent p-5 sm:p-8 flex items-center justify-center backface-hidden overflow-hidden"
                 style={{ backfaceVisibility: "hidden", transform: "rotateY(180deg)" }}>
-                <div className="text-center">
-                  <span className="text-xs text-primary font-medium mb-4 block">ANSWER</span>
-                  <p className="text-foreground text-lg">{cards[current].back}</p>
+                <div className="text-center w-full max-h-full overflow-y-auto">
+                  <span className="text-xs text-primary font-medium mb-3 sm:mb-4 block">ANSWER</span>
+                  <p className="text-foreground text-sm sm:text-lg break-words">{cards[current].back}</p>
                 </div>
               </div>
             </motion.div>
           </div>
-          <div className="flex items-center justify-center gap-4">
+          <div className="flex items-center justify-center gap-3 sm:gap-4 flex-wrap">
             <Button variant="outline" size="icon" onClick={prev} disabled={current === 0}><ChevronLeft className="h-4 w-4" /></Button>
             <Button variant="gradient" onClick={() => { setCards([]); setCurrent(0); }}><RotateCcw className="h-4 w-4 mr-2" />New Set</Button>
             <Button variant="outline" size="icon" onClick={next} disabled={current === cards.length - 1}><ChevronRight className="h-4 w-4" /></Button>

@@ -188,7 +188,7 @@ export default function ContentLibrary() {
               key={c.id}
               initial={{ opacity: 0, y: 8 }}
               animate={{ opacity: 1, y: 0 }}
-              className="rounded-2xl border border-border bg-card p-5 hover:shadow-glow transition-all group"
+              className="rounded-2xl border border-border bg-card p-5 transition-all duration-200 hover:-translate-y-0.5 hover:shadow-glow hover:border-primary/30 group"
             >
               <div className="flex items-start justify-between">
                 <div className="flex-1 min-w-0">
@@ -199,12 +199,12 @@ export default function ContentLibrary() {
                   <p className="text-sm text-muted-foreground mt-1 line-clamp-2">{c.content.substring(0, 200)}...</p>
                   <p className="text-xs text-muted-foreground mt-2">{new Date(c.created_at).toLocaleDateString()}</p>
                 </div>
-                <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity ml-4">
-                  <Button variant="ghost" size="icon" onClick={() => setViewing(c)} title="View Content"><Eye className="h-4 w-4" /></Button>
-                  <Button variant="ghost" size="icon" onClick={() => navigate(`/quiz?contentId=${c.id}`)} title="Generate Quiz"><Brain className="h-4 w-4" /></Button>
-                  <Button variant="ghost" size="icon" onClick={() => navigate(`/flashcards?contentId=${c.id}`)} title="Generate Flashcards"><BookOpen className="h-4 w-4" /></Button>
-                  <Button variant="ghost" size="icon" onClick={() => navigate(`/chat?contentId=${c.id}`)} title="Chat about this"><MessageSquare className="h-4 w-4" /></Button>
-                  <Button variant="ghost" size="icon" onClick={() => handleDelete(c.id)} title="Delete" className="hover:text-destructive"><Trash2 className="h-4 w-4" /></Button>
+                <div className="flex items-center gap-1 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity ml-4">
+                  <Button variant="ghost" size="icon" onClick={() => setViewing(c)} title="View Content"><Eye className="h-4 w-4" strokeWidth={1.75} /></Button>
+                  <Button variant="ghost" size="icon" onClick={() => navigate(`/quiz?contentId=${c.id}`)} title="Generate Quiz"><Brain className="h-4 w-4" strokeWidth={1.75} /></Button>
+                  <Button variant="ghost" size="icon" onClick={() => navigate(`/flashcards?contentId=${c.id}`)} title="Generate Flashcards"><BookOpen className="h-4 w-4" strokeWidth={1.75} /></Button>
+                  <Button variant="ghost" size="icon" onClick={() => navigate(`/chat?contentId=${c.id}`)} title="Chat about this"><MessageSquare className="h-4 w-4" strokeWidth={1.75} /></Button>
+                  <Button variant="ghost" size="icon" onClick={() => handleDelete(c.id)} title="Delete" className="hover:text-destructive"><Trash2 className="h-4 w-4" strokeWidth={1.75} /></Button>
                 </div>
               </div>
             </motion.div>

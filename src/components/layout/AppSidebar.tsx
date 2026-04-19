@@ -60,10 +60,10 @@ export function AppSidebar() {
                     <NavLink
                       to={item.url}
                       end
-                      className="flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm text-sidebar-foreground transition-all hover:bg-sidebar-accent"
-                      activeClassName="gradient-primary text-primary-foreground shadow-glow"
+                      className="relative flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm text-sidebar-foreground transition-all hover:bg-sidebar-accent"
+                      activeClassName="gradient-primary text-primary-foreground shadow-glow font-medium before:absolute before:left-0 before:top-1/2 before:-translate-y-1/2 before:h-5 before:w-1 before:rounded-r before:bg-primary-foreground/80"
                     >
-                      <item.icon className="h-4 w-4 shrink-0" />
+                      <item.icon className="h-4 w-4 shrink-0" strokeWidth={1.75} />
                       {!collapsed && <span>{item.title}</span>}
                     </NavLink>
                   </SidebarMenuButton>

@@ -14,6 +14,16 @@ const quickActions = [
   { title: "AI Analysis", desc: "Smart content insights", icon: Sparkles, path: "/library", color: "from-violet-500 to-indigo-500" },
 ];
 
+const quotes = [
+  "Small steps, every day. That's how syllabi get conquered.",
+  "You don't have to be brilliant — just consistent.",
+  "Read it. Question it. Then teach it back to yourself.",
+  "Confusion is the first step toward understanding.",
+  "An hour of focus beats a day of distraction.",
+  "Progress, not perfection.",
+  "The notes you revisit are the ones you remember.",
+];
+
 const container = { hidden: {}, show: { transition: { staggerChildren: 0.06 } } };
 const item = { hidden: { opacity: 0, y: 12 }, show: { opacity: 1, y: 0 } };
 
@@ -22,6 +32,12 @@ function formatDuration(seconds: number): string {
   if (seconds < 3600) return `${Math.round(seconds / 60)}m`;
   const h = seconds / 3600;
   return `${h.toFixed(1)}h`;
+}
+
+function getDailyQuote(): string {
+  const start = new Date(new Date().getFullYear(), 0, 0).getTime();
+  const day = Math.floor((Date.now() - start) / 86400000);
+  return quotes[day % quotes.length];
 }
 
 export default function Dashboard() {
@@ -82,14 +98,17 @@ export default function Dashboard() {
           {" · "}
           {currentTime.toLocaleTimeString(undefined, { hour: "2-digit", minute: "2-digit", second: "2-digit" })}
         </p>
+        <p className="mt-3 italic text-sm text-muted-foreground/90 font-heading border-l-2 border-primary/40 pl-3">
+          "{getDailyQuote()}"
+        </p>
       </motion.div>
 
       <motion.div variants={item} className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         {statCards.map((s) => (
-          <div key={s.label} className="rounded-2xl border border-border bg-card p-4 hover:shadow-glow transition-shadow">
+          <div key={s.label} className="rounded-2xl border border-border bg-card p-4 transition-all duration-200 hover:-translate-y-0.5 hover:shadow-glow hover:border-primary/30">
             <div className="flex items-center justify-between mb-3">
               <div className="p-2 rounded-xl bg-primary/10">
-                <s.icon className="h-4 w-4 text-primary" />
+                <s.icon className="h-4 w-4 text-primary" strokeWidth={1.75} />
               </div>
             </div>
             <p className="font-heading text-2xl font-bold text-foreground">{s.value}</p>
@@ -105,10 +124,10 @@ export default function Dashboard() {
             <button
               key={a.title}
               onClick={() => navigate(a.path)}
-              className="group rounded-2xl border border-border bg-card p-5 text-left hover:shadow-glow transition-all hover:border-primary/30"
+              className="group rounded-2xl border border-border bg-card p-5 text-left transition-all duration-200 hover:-translate-y-0.5 hover:shadow-glow hover:border-primary/30"
             >
               <div className={`inline-flex p-2.5 rounded-xl bg-gradient-to-br ${a.color} mb-3`}>
-                <a.icon className="h-5 w-5 text-primary-foreground" />
+                <a.icon className="h-5 w-5 text-primary-foreground" strokeWidth={1.75} />
               </div>
               <h3 className="font-heading font-semibold text-foreground group-hover:text-primary transition-colors">{a.title}</h3>
               <p className="text-xs text-muted-foreground mt-1">{a.desc}</p>
