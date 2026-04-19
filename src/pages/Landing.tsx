@@ -5,10 +5,10 @@ import { motion } from "framer-motion";
 import logo from "@/assets/aiacademy-logo.jpeg";
 
 const features = [
-  { icon: Brain, title: "AI Quizzes", desc: "Auto-generated multiple choice questions from your study material with instant feedback." },
-  { icon: Layers, title: "Smart Flashcards", desc: "AI-crafted flashcards with 3D flip animations for effective memorization." },
-  { icon: MessageSquare, title: "Study Chatbot", desc: "Ask questions about your content and get contextual AI-powered answers." },
-  { icon: Zap, title: "Content Library", desc: "Upload PDFs, paste text, or scrape URLs — all your study material in one place." },
+  { icon: Brain, title: "Quizzes that stick", desc: "Turn your notes into multiple-choice questions and get feedback as you go — no more passive re-reading." },
+  { icon: Layers, title: "Flashcards, done for you", desc: "Skip the busywork. We pull out the key ideas and shape them into cards you can actually flip through." },
+  { icon: MessageSquare, title: "Ask your notes anything", desc: "Stuck on a concept? Have a conversation with your own material until it clicks." },
+  { icon: Zap, title: "One place for everything", desc: "Drop in a PDF, paste an article, or share a link. Your whole syllabus in one tidy library." },
 ];
 
 const fadeUp = {
@@ -45,18 +45,17 @@ export default function Landing() {
         <div className="max-w-4xl mx-auto px-6 pt-24 pb-20 text-center relative">
           <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6 }}>
             <span className="inline-flex items-center gap-1.5 text-xs font-medium px-3 py-1 rounded-full bg-primary/10 text-primary mb-6">
-              <Sparkles className="h-3.5 w-3.5" /> Powered by AI
+              <Sparkles className="h-3.5 w-3.5" /> A calmer way to study
             </span>
-            <h1 className="font-heading text-4xl sm:text-5xl md:text-6xl font-bold leading-tight mb-6">
-              Study smarter with<br />
-              <span className="text-gradient">AI-powered learning</span>
+            <h1 className="font-heading text-4xl sm:text-5xl md:text-6xl font-medium leading-[1.05] mb-6 tracking-tight">
+              Study like you actually <em className="text-gradient not-italic font-semibold">enjoy it.</em>
             </h1>
-            <p className="text-muted-foreground text-lg max-w-2xl mx-auto mb-10">
-              Upload your study materials and let AI generate quizzes, flashcards, and summaries. Chat with your content and ace every exam.
+            <p className="text-muted-foreground text-lg max-w-2xl mx-auto mb-10 leading-relaxed">
+              Bring in your notes, slides, or readings — and turn them into quizzes, flashcards, and conversations you can learn from. No fluff, no overwhelm.
             </p>
             <Link to="/auth">
               <Button variant="gradient" size="lg" className="text-base px-8 shadow-glow">
-                Start Learning Free <ArrowRight className="ml-2 h-5 w-5" />
+                Try it free <ArrowRight className="ml-2 h-5 w-5" />
               </Button>
             </Link>
           </motion.div>
@@ -66,8 +65,8 @@ export default function Landing() {
       {/* Features */}
       <section className="max-w-5xl mx-auto px-6 py-20">
         <div className="text-center mb-14">
-          <h2 className="font-heading text-3xl font-bold mb-3">Everything you need to study</h2>
-          <p className="text-muted-foreground">Upload once, learn in multiple ways — all powered by AI.</p>
+          <h2 className="font-heading text-3xl md:text-4xl font-medium mb-3">Built around how people actually learn</h2>
+          <p className="text-muted-foreground">Upload once. Revisit it however helps you most.</p>
         </div>
         <div className="grid sm:grid-cols-2 gap-6">
           {features.map((f, i) => (
@@ -93,11 +92,11 @@ export default function Landing() {
       {/* CTA */}
       <section className="max-w-3xl mx-auto px-6 pb-24 text-center">
         <div className="rounded-2xl gradient-card border border-border p-10">
-          <h2 className="font-heading text-2xl font-bold mb-3">Ready to ace your exams?</h2>
-          <p className="text-muted-foreground mb-6">Join AIacademy and transform how you study — for free.</p>
+          <h2 className="font-heading text-2xl md:text-3xl font-medium mb-3">Give your next study session a head start.</h2>
+          <p className="text-muted-foreground mb-6">Free to use. No card, no clutter — just your notes and a quieter way to revise.</p>
           <Link to="/auth">
             <Button variant="gradient" size="lg" className="shadow-glow">
-              Get Started Now <ArrowRight className="ml-2 h-5 w-5" />
+              Get started <ArrowRight className="ml-2 h-5 w-5" />
             </Button>
           </Link>
         </div>
@@ -105,7 +104,7 @@ export default function Landing() {
 
       {/* Footer */}
       <footer className="border-t border-border py-8 text-center text-xs text-muted-foreground">
-        © {new Date().getFullYear()} AIacademy. Built with ❤️ and AI.
+        © {new Date().getFullYear()} AIacademy — made for curious students.
       </footer>
     </div>
   );
