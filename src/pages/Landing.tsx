@@ -5,10 +5,10 @@ import { motion } from "framer-motion";
 import logo from "@/assets/aiacademy-logo.jpeg";
 
 const features = [
-  { icon: Brain, title: "AI Quizzes", desc: "Auto-generated multiple choice questions from your study material with instant feedback." },
-  { icon: Layers, title: "Smart Flashcards", desc: "AI-crafted flashcards with 3D flip animations for effective memorization." },
-  { icon: MessageSquare, title: "Study Chatbot", desc: "Ask questions about your content and get contextual AI-powered answers." },
-  { icon: Zap, title: "Content Library", desc: "Upload PDFs, paste text, or scrape URLs — all your study material in one place." },
+  { icon: Brain, title: "Quizzes that stick", desc: "Turn your notes into multiple-choice questions and get feedback as you go — no more passive re-reading." },
+  { icon: Layers, title: "Flashcards, done for you", desc: "Skip the busywork. We pull out the key ideas and shape them into cards you can actually flip through." },
+  { icon: MessageSquare, title: "Ask your notes anything", desc: "Stuck on a concept? Have a conversation with your own material until it clicks." },
+  { icon: Zap, title: "One place for everything", desc: "Drop in a PDF, paste an article, or share a link. Your whole syllabus in one tidy library." },
 ];
 
 const fadeUp = {
