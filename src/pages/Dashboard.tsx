@@ -75,7 +75,7 @@ export default function Dashboard() {
     <motion.div variants={container} initial="hidden" animate="show" className="space-y-6">
       <motion.div variants={item}>
         <h1 className="font-heading text-2xl font-bold text-foreground">
-          Welcome back, {user?.user_metadata?.name || "Student"} 👋
+          Welcome back, {user?.user_metadata?.name || "Student"} 
         </h1>
         <p className="text-muted-foreground mt-1">
           {currentTime.toLocaleDateString(undefined, { weekday: "long", year: "numeric", month: "long", day: "numeric" })}
