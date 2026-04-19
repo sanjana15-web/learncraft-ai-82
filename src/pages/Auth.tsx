@@ -45,8 +45,8 @@ export default function Auth() {
         className="w-full max-w-md"
       >
         <div className="text-center mb-8">
-          <div className="inline-block rounded-2xl overflow-hidden shadow-glow mb-4">
-            <img src={logo} alt="AIacademy logo" className="h-16 w-16 object-cover" />
+          <div className="inline-block rounded-xl overflow-hidden shadow-glow mb-4">
+            <img src={logo} alt="AIacademy logo" className="h-10 w-10 object-cover" />
           </div>
           <h1 className="font-heading text-3xl font-bold text-foreground">AIacademy</h1>
           <p className="text-muted-foreground mt-2">Your AI-powered learning assistant</p>

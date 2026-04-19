@@ -24,7 +24,7 @@ export default function Landing() {
         <div className="max-w-6xl mx-auto flex items-center justify-between px-6 h-16">
           <div className="flex items-center gap-2">
             <div className="rounded-xl overflow-hidden">
-              <img src={logo} alt="AIacademy logo" className="h-9 w-9 object-cover" />
+              <img src={logo} alt="AIacademy logo" className="h-10 w-10 object-cover" />
             </div>
             <span className="font-heading text-xl font-bold">AIacademy</span>
           </div>
@@ -103,8 +103,15 @@ export default function Landing() {
       </section>
 
       {/* Footer */}
-      <footer className="border-t border-border py-8 text-center text-xs text-muted-foreground">
-        © {new Date().getFullYear()} AIacademy — made for curious students.
+      <footer className="border-t border-border">
+        <div className="max-w-6xl mx-auto px-6 py-8 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-muted-foreground">
+          <p>© {new Date().getFullYear()} AIacademy — made for curious students.</p>
+          <nav className="flex items-center gap-6">
+            <Link to="/about" className="hover:text-primary transition-colors">About</Link>
+            <Link to="/privacy" className="hover:text-primary transition-colors">Privacy</Link>
+            <Link to="/contact" className="hover:text-primary transition-colors">Contact</Link>
+          </nav>
+        </div>
       </footer>
     </div>
   );
