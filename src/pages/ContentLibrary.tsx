@@ -6,11 +6,12 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { Plus, FileText, Brain, BookOpen, MessageSquare, Loader2, Trash2, Globe, Eye, Youtube } from "lucide-react";
+import { Plus, FileText, Brain, BookOpen, MessageSquare, Loader2, Trash2, Globe, Eye, Youtube, HardDrive, Calendar as CalendarIcon, Search } from "lucide-react";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { toast } from "sonner";
 import { motion } from "framer-motion";
 import { useNavigate } from "react-router-dom";
+import { startGoogleOAuth } from "@/lib/google";
 
 interface ContentSource {
   id: string;
@@ -33,6 +34,118 @@ export default function ContentLibrary() {
   const [url, setUrl] = useState("");
   const [scraping, setScraping] = useState(false);
   const [viewing, setViewing] = useState<ContentSource | null>(null);
+
+  // Google Drive picker state
+  const [driveOpen, setDriveOpen] = useState(false);
+  const [driveQuery, setDriveQuery] = useState("");
+  const [driveLoading, setDriveLoading] = useState(false);
+  const [driveFiles, setDriveFiles] = useState<Array<{ id: string; name: string; mimeType: string; modifiedTime: string }>>([]);
+  const [importingId, setImportingId] = useState<string | null>(null);
+
+  // Schedule state
+  const [scheduleFor, setScheduleFor] = useState<ContentSource | null>(null);
+  const [scheduleDate, setScheduleDate] = useState("");
+  const [scheduleDuration, setScheduleDuration] = useState(30);
+  const [scheduling, setScheduling] = useState(false);
+
+  const ensureGoogle = async (returnTo: string): Promise<boolean> => {
+    if (!user) return false;
+    const { data } = await supabase.from("google_tokens").select("user_id").eq("user_id", user.id).maybeSingle();
+    if (data) return true;
+    toast.info("Connect your Google account to continue");
+    await startGoogleOAuth(returnTo);
+    return false;
+  };
+
+  const openDrive = async () => {
+    const ok = await ensureGoogle("/library");
+    if (!ok) return;
+    setDriveOpen(true);
+    loadDriveFiles("");
+  };
+
+  const loadDriveFiles = async (q: string) => {
+    setDriveLoading(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("google-drive", {
+        body: { action: "list", query: q },
+      });
+      if (error) throw error;
+      if (data?.error) {
+        if (data.needsAuth) {
+          toast.info("Reconnect Google to continue");
+          await startGoogleOAuth("/library");
+          return;
+        }
+        throw new Error(data.error);
+      }
+      setDriveFiles(data.files || []);
+    } catch (e: any) {
+      toast.error(e.message || "Failed to load Drive files");
+    }
+    setDriveLoading(false);
+  };
+
+  const importDriveFile = async (f: { id: string; name: string; mimeType: string }) => {
+    if (!user) return;
+    setImportingId(f.id);
+    try {
+      const { data, error } = await supabase.functions.invoke("google-drive", {
+        body: { action: "import", fileId: f.id, mimeType: f.mimeType },
+      });
+      if (error) throw error;
+      if (data?.error) throw new Error(data.error);
+      const { error: insErr } = await supabase.from("content_sources").insert({
+        user_id: user.id,
+        title: data.title || f.name,
+        content: data.content,
+        source_type: "drive",
+      });
+      if (insErr) throw insErr;
+      toast.success(`Imported "${f.name}"`);
+      setDriveOpen(false);
+      fetchContents();
+    } catch (e: any) {
+      toast.error(e.message || "Failed to import file");
+    }
+    setImportingId(null);
+  };
+
+  const openSchedule = async (c: ContentSource) => {
+    const ok = await ensureGoogle("/library");
+    if (!ok) return;
+    // Default to tomorrow at 6pm local
+    const d = new Date();
+    d.setDate(d.getDate() + 1);
+    d.setHours(18, 0, 0, 0);
+    const pad = (n: number) => String(n).padStart(2, "0");
+    setScheduleDate(`${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`);
+    setScheduleDuration(30);
+    setScheduleFor(c);
+  };
+
+  const handleSchedule = async () => {
+    if (!scheduleFor || !scheduleDate) return;
+    setScheduling(true);
+    try {
+      const startISO = new Date(scheduleDate).toISOString();
+      const { data, error } = await supabase.functions.invoke("google-calendar", {
+        body: {
+          title: `Study: ${scheduleFor.title}`,
+          description: `Review study material from AIacademy.\n\n${scheduleFor.content.substring(0, 300)}...`,
+          startISO,
+          durationMinutes: scheduleDuration,
+        },
+      });
+      if (error) throw error;
+      if (data?.error) throw new Error(data.error);
+      toast.success("Added to Google Calendar");
+      setScheduleFor(null);
+    } catch (e: any) {
+      toast.error(e.message || "Failed to schedule");
+    }
+    setScheduling(false);
+  };
 
   const fetchContents = async () => {
     if (!user) return;
@@ -142,6 +255,9 @@ export default function ContentLibrary() {
           <p className="text-muted-foreground mt-1">Manage your study materials</p>
         </div>
         <div className="flex gap-2">
+          <Button variant="outline" size="sm" onClick={openDrive}>
+            <HardDrive className="h-4 w-4 mr-2" />Google Drive
+          </Button>
           <Dialog open={urlOpen} onOpenChange={setUrlOpen}>
             <DialogTrigger asChild>
               <Button variant="outline" size="sm"><Globe className="h-4 w-4 mr-2" />Import URL</Button>
@@ -218,6 +334,7 @@ export default function ContentLibrary() {
                   <Button variant="ghost" size="icon" onClick={() => navigate(`/quiz?contentId=${c.id}`)} title="Generate Quiz"><Brain className="h-4 w-4" strokeWidth={1.75} /></Button>
                   <Button variant="ghost" size="icon" onClick={() => navigate(`/flashcards?contentId=${c.id}`)} title="Generate Flashcards"><BookOpen className="h-4 w-4" strokeWidth={1.75} /></Button>
                   <Button variant="ghost" size="icon" onClick={() => navigate(`/chat?contentId=${c.id}`)} title="Chat about this"><MessageSquare className="h-4 w-4" strokeWidth={1.75} /></Button>
+                  <Button variant="ghost" size="icon" onClick={() => openSchedule(c)} title="Schedule study session"><CalendarIcon className="h-4 w-4" strokeWidth={1.75} /></Button>
                   <Button variant="ghost" size="icon" onClick={() => handleDelete(c.id)} title="Delete" className="hover:text-destructive"><Trash2 className="h-4 w-4" strokeWidth={1.75} /></Button>
                 </div>
               </div>
@@ -243,6 +360,84 @@ export default function ContentLibrary() {
               {viewing?.content}
             </pre>
           </ScrollArea>
+        </DialogContent>
+      </Dialog>
+
+      {/* Google Drive picker */}
+      <Dialog open={driveOpen} onOpenChange={setDriveOpen}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <HardDrive className="h-5 w-5 text-primary" /> Import from Google Drive
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-3">
+            <div className="flex gap-2">
+              <div className="relative flex-1">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                <Input
+                  className="pl-9"
+                  placeholder="Search your Drive..."
+                  value={driveQuery}
+                  onChange={(e) => setDriveQuery(e.target.value)}
+                  onKeyDown={(e) => { if (e.key === "Enter") loadDriveFiles(driveQuery); }}
+                />
+              </div>
+              <Button variant="outline" onClick={() => loadDriveFiles(driveQuery)} disabled={driveLoading}>Search</Button>
+            </div>
+            <ScrollArea className="h-[50vh] rounded-lg border border-border">
+              {driveLoading ? (
+                <div className="flex justify-center py-12"><Loader2 className="h-6 w-6 animate-spin text-primary" /></div>
+              ) : driveFiles.length === 0 ? (
+                <div className="text-center py-12 text-muted-foreground text-sm">No documents found</div>
+              ) : (
+                <div className="divide-y divide-border">
+                  {driveFiles.map((f) => (
+                    <div key={f.id} className="flex items-center justify-between p-3 hover:bg-muted/40">
+                      <div className="min-w-0 flex-1">
+                        <p className="text-sm font-medium text-foreground truncate">{f.name}</p>
+                        <p className="text-xs text-muted-foreground">
+                          {f.mimeType.replace("application/vnd.google-apps.", "Google ").replace("application/", "")}
+                          {" · "}{new Date(f.modifiedTime).toLocaleDateString()}
+                        </p>
+                      </div>
+                      <Button size="sm" variant="gradient" disabled={importingId === f.id} onClick={() => importDriveFile(f)}>
+                        {importingId === f.id ? <Loader2 className="h-4 w-4 animate-spin" /> : "Import"}
+                      </Button>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </ScrollArea>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Schedule study session */}
+      <Dialog open={!!scheduleFor} onOpenChange={(o) => !o && setScheduleFor(null)}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <CalendarIcon className="h-5 w-5 text-primary" /> Schedule Study Session
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div>
+              <Label>For</Label>
+              <p className="text-sm text-muted-foreground mt-1 truncate">{scheduleFor?.title}</p>
+            </div>
+            <div>
+              <Label>Date & time</Label>
+              <Input type="datetime-local" value={scheduleDate} onChange={(e) => setScheduleDate(e.target.value)} />
+            </div>
+            <div>
+              <Label>Duration (minutes)</Label>
+              <Input type="number" min={5} max={240} value={scheduleDuration} onChange={(e) => setScheduleDuration(parseInt(e.target.value) || 30)} />
+            </div>
+            <Button variant="gradient" className="w-full" onClick={handleSchedule} disabled={scheduling}>
+              {scheduling ? <Loader2 className="h-4 w-4 animate-spin" /> : "Add to Google Calendar"}
+            </Button>
+          </div>
         </DialogContent>
       </Dialog>
     </motion.div>
