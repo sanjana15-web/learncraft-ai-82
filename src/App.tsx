@@ -13,6 +13,7 @@ import Quiz from "@/pages/Quiz";
 import Flashcards from "@/pages/Flashcards";
 import Chatbot from "@/pages/Chatbot";
 import AudioSummary from "@/pages/AudioSummary";
+import GoogleCallback from "@/pages/GoogleCallback";
 import NotFound from "@/pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -41,6 +42,7 @@ const App = () => (
           <Routes>
             <Route path="/" element={<PublicRoute><Landing /></PublicRoute>} />
             <Route path="/auth" element={<PublicRoute><Auth /></PublicRoute>} />
+            <Route path="/google-callback" element={<ProtectedRoute><GoogleCallback /></ProtectedRoute>} />
             <Route element={<ProtectedRoute><AppLayout /></ProtectedRoute>}>
               <Route path="/dashboard" element={<Dashboard />} />
               <Route path="/library" element={<ContentLibrary />} />
