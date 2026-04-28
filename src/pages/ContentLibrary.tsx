@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { Plus, FileText, Brain, BookOpen, MessageSquare, Loader2, Trash2, Globe, Eye } from "lucide-react";
+import { Plus, FileText, Brain, BookOpen, MessageSquare, Loader2, Trash2, Globe, Eye, Youtube } from "lucide-react";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { toast } from "sonner";
 import { motion } from "framer-motion";
@@ -67,15 +67,22 @@ export default function ContentLibrary() {
     if (!user || !url.trim()) return;
     setScraping(true);
     try {
-      const { data, error } = await supabase.functions.invoke("scrape-url", {
-        body: { url: url.trim() },
+      const trimmed = url.trim();
+      const isYoutube = /(?:youtube\.com|youtu\.be)/i.test(trimmed);
+      const fnName = isYoutube ? "youtube-transcript" : "scrape-url";
+      const { data, error } = await supabase.functions.invoke(fnName, {
+        body: { url: trimmed },
       });
       if (error) throw error;
+      if (data?.error) throw new Error(data.error);
       const { error: insertError } = await supabase.from("content_sources").insert({
-        user_id: user.id, title: data.title || url, content: data.content, source_type: "url",
+        user_id: user.id,
+        title: data.title || trimmed,
+        content: data.content,
+        source_type: isYoutube ? "youtube" : "url",
       });
       if (insertError) throw insertError;
-      toast.success("URL content imported!");
+      toast.success(isYoutube ? "YouTube transcript imported!" : "URL content imported!");
       setUrl(""); setUrlOpen(false);
       fetchContents();
     } catch (e: any) {
@@ -140,9 +147,16 @@ export default function ContentLibrary() {
               <Button variant="outline" size="sm"><Globe className="h-4 w-4 mr-2" />Import URL</Button>
             </DialogTrigger>
             <DialogContent>
-              <DialogHeader><DialogTitle>Import from URL</DialogTitle></DialogHeader>
+              <DialogHeader><DialogTitle>Import from URL or YouTube</DialogTitle></DialogHeader>
               <div className="space-y-4">
-                <div><Label>URL</Label><Input value={url} onChange={e => setUrl(e.target.value)} placeholder="https://..." /></div>
+                <div>
+                  <Label>URL</Label>
+                  <Input value={url} onChange={e => setUrl(e.target.value)} placeholder="https://... or YouTube link" />
+                  <p className="text-xs text-muted-foreground mt-1.5 flex items-center gap-1.5">
+                    <Youtube className="h-3 w-3" />
+                    YouTube links are auto-detected and the transcript is imported.
+                  </p>
+                </div>
                 <Button variant="gradient" onClick={handleScrape} disabled={scraping} className="w-full">
                   {scraping ? <Loader2 className="h-4 w-4 animate-spin" /> : "Import"}
                 </Button>
