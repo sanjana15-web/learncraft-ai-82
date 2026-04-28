@@ -334,6 +334,7 @@ export default function ContentLibrary() {
                   <Button variant="ghost" size="icon" onClick={() => navigate(`/quiz?contentId=${c.id}`)} title="Generate Quiz"><Brain className="h-4 w-4" strokeWidth={1.75} /></Button>
                   <Button variant="ghost" size="icon" onClick={() => navigate(`/flashcards?contentId=${c.id}`)} title="Generate Flashcards"><BookOpen className="h-4 w-4" strokeWidth={1.75} /></Button>
                   <Button variant="ghost" size="icon" onClick={() => navigate(`/chat?contentId=${c.id}`)} title="Chat about this"><MessageSquare className="h-4 w-4" strokeWidth={1.75} /></Button>
+                  <Button variant="ghost" size="icon" onClick={() => openSchedule(c)} title="Schedule study session"><CalendarIcon className="h-4 w-4" strokeWidth={1.75} /></Button>
                   <Button variant="ghost" size="icon" onClick={() => handleDelete(c.id)} title="Delete" className="hover:text-destructive"><Trash2 className="h-4 w-4" strokeWidth={1.75} /></Button>
                 </div>
               </div>
@@ -359,6 +360,84 @@ export default function ContentLibrary() {
               {viewing?.content}
             </pre>
           </ScrollArea>
+        </DialogContent>
+      </Dialog>
+
+      {/* Google Drive picker */}
+      <Dialog open={driveOpen} onOpenChange={setDriveOpen}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <HardDrive className="h-5 w-5 text-primary" /> Import from Google Drive
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-3">
+            <div className="flex gap-2">
+              <div className="relative flex-1">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                <Input
+                  className="pl-9"
+                  placeholder="Search your Drive..."
+                  value={driveQuery}
+                  onChange={(e) => setDriveQuery(e.target.value)}
+                  onKeyDown={(e) => { if (e.key === "Enter") loadDriveFiles(driveQuery); }}
+                />
+              </div>
+              <Button variant="outline" onClick={() => loadDriveFiles(driveQuery)} disabled={driveLoading}>Search</Button>
+            </div>
+            <ScrollArea className="h-[50vh] rounded-lg border border-border">
+              {driveLoading ? (
+                <div className="flex justify-center py-12"><Loader2 className="h-6 w-6 animate-spin text-primary" /></div>
+              ) : driveFiles.length === 0 ? (
+                <div className="text-center py-12 text-muted-foreground text-sm">No documents found</div>
+              ) : (
+                <div className="divide-y divide-border">
+                  {driveFiles.map((f) => (
+                    <div key={f.id} className="flex items-center justify-between p-3 hover:bg-muted/40">
+                      <div className="min-w-0 flex-1">
+                        <p className="text-sm font-medium text-foreground truncate">{f.name}</p>
+                        <p className="text-xs text-muted-foreground">
+                          {f.mimeType.replace("application/vnd.google-apps.", "Google ").replace("application/", "")}
+                          {" · "}{new Date(f.modifiedTime).toLocaleDateString()}
+                        </p>
+                      </div>
+                      <Button size="sm" variant="gradient" disabled={importingId === f.id} onClick={() => importDriveFile(f)}>
+                        {importingId === f.id ? <Loader2 className="h-4 w-4 animate-spin" /> : "Import"}
+                      </Button>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </ScrollArea>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Schedule study session */}
+      <Dialog open={!!scheduleFor} onOpenChange={(o) => !o && setScheduleFor(null)}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <CalendarIcon className="h-5 w-5 text-primary" /> Schedule Study Session
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div>
+              <Label>For</Label>
+              <p className="text-sm text-muted-foreground mt-1 truncate">{scheduleFor?.title}</p>
+            </div>
+            <div>
+              <Label>Date & time</Label>
+              <Input type="datetime-local" value={scheduleDate} onChange={(e) => setScheduleDate(e.target.value)} />
+            </div>
+            <div>
+              <Label>Duration (minutes)</Label>
+              <Input type="number" min={5} max={240} value={scheduleDuration} onChange={(e) => setScheduleDuration(parseInt(e.target.value) || 30)} />
+            </div>
+            <Button variant="gradient" className="w-full" onClick={handleSchedule} disabled={scheduling}>
+              {scheduling ? <Loader2 className="h-4 w-4 animate-spin" /> : "Add to Google Calendar"}
+            </Button>
+          </div>
         </DialogContent>
       </Dialog>
     </motion.div>
