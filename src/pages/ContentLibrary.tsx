@@ -6,11 +6,12 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { Plus, FileText, Brain, BookOpen, MessageSquare, Loader2, Trash2, Globe, Eye, Youtube } from "lucide-react";
+import { Plus, FileText, Brain, BookOpen, MessageSquare, Loader2, Trash2, Globe, Eye, Youtube, HardDrive, Calendar as CalendarIcon, Search } from "lucide-react";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { toast } from "sonner";
 import { motion } from "framer-motion";
 import { useNavigate } from "react-router-dom";
+import { startGoogleOAuth } from "@/lib/google";
 
 interface ContentSource {
   id: string;
@@ -33,6 +34,118 @@ export default function ContentLibrary() {
   const [url, setUrl] = useState("");
   const [scraping, setScraping] = useState(false);
   const [viewing, setViewing] = useState<ContentSource | null>(null);
+
+  // Google Drive picker state
+  const [driveOpen, setDriveOpen] = useState(false);
+  const [driveQuery, setDriveQuery] = useState("");
+  const [driveLoading, setDriveLoading] = useState(false);
+  const [driveFiles, setDriveFiles] = useState<Array<{ id: string; name: string; mimeType: string; modifiedTime: string }>>([]);
+  const [importingId, setImportingId] = useState<string | null>(null);
+
+  // Schedule state
+  const [scheduleFor, setScheduleFor] = useState<ContentSource | null>(null);
+  const [scheduleDate, setScheduleDate] = useState("");
+  const [scheduleDuration, setScheduleDuration] = useState(30);
+  const [scheduling, setScheduling] = useState(false);
+
+  const ensureGoogle = async (returnTo: string): Promise<boolean> => {
+    if (!user) return false;
+    const { data } = await supabase.from("google_tokens").select("user_id").eq("user_id", user.id).maybeSingle();
+    if (data) return true;
+    toast.info("Connect your Google account to continue");
+    await startGoogleOAuth(returnTo);
+    return false;
+  };
+
+  const openDrive = async () => {
+    const ok = await ensureGoogle("/library");
+    if (!ok) return;
+    setDriveOpen(true);
+    loadDriveFiles("");
+  };
+
+  const loadDriveFiles = async (q: string) => {
+    setDriveLoading(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("google-drive", {
+        body: { action: "list", query: q },
+      });
+      if (error) throw error;
+      if (data?.error) {
+        if (data.needsAuth) {
+          toast.info("Reconnect Google to continue");
+          await startGoogleOAuth("/library");
+          return;
+        }
+        throw new Error(data.error);
+      }
+      setDriveFiles(data.files || []);
+    } catch (e: any) {
+      toast.error(e.message || "Failed to load Drive files");
+    }
+    setDriveLoading(false);
+  };
+
+  const importDriveFile = async (f: { id: string; name: string; mimeType: string }) => {
+    if (!user) return;
+    setImportingId(f.id);
+    try {
+      const { data, error } = await supabase.functions.invoke("google-drive", {
+        body: { action: "import", fileId: f.id, mimeType: f.mimeType },
+      });
+      if (error) throw error;
+      if (data?.error) throw new Error(data.error);
+      const { error: insErr } = await supabase.from("content_sources").insert({
+        user_id: user.id,
+        title: data.title || f.name,
+        content: data.content,
+        source_type: "drive",
+      });
+      if (insErr) throw insErr;
+      toast.success(`Imported "${f.name}"`);
+      setDriveOpen(false);
+      fetchContents();
+    } catch (e: any) {
+      toast.error(e.message || "Failed to import file");
+    }
+    setImportingId(null);
+  };
+
+  const openSchedule = async (c: ContentSource) => {
+    const ok = await ensureGoogle("/library");
+    if (!ok) return;
+    // Default to tomorrow at 6pm local
+    const d = new Date();
+    d.setDate(d.getDate() + 1);
+    d.setHours(18, 0, 0, 0);
+    const pad = (n: number) => String(n).padStart(2, "0");
+    setScheduleDate(`${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`);
+    setScheduleDuration(30);
+    setScheduleFor(c);
+  };
+
+  const handleSchedule = async () => {
+    if (!scheduleFor || !scheduleDate) return;
+    setScheduling(true);
+    try {
+      const startISO = new Date(scheduleDate).toISOString();
+      const { data, error } = await supabase.functions.invoke("google-calendar", {
+        body: {
+          title: `Study: ${scheduleFor.title}`,
+          description: `Review study material from AIacademy.\n\n${scheduleFor.content.substring(0, 300)}...`,
+          startISO,
+          durationMinutes: scheduleDuration,
+        },
+      });
+      if (error) throw error;
+      if (data?.error) throw new Error(data.error);
+      toast.success("Added to Google Calendar");
+      setScheduleFor(null);
+    } catch (e: any) {
+      toast.error(e.message || "Failed to schedule");
+    }
+    setScheduling(false);
+  };
 
   const fetchContents = async () => {
     if (!user) return;
@@ -142,6 +255,9 @@ export default function ContentLibrary() {
           <p className="text-muted-foreground mt-1">Manage your study materials</p>
         </div>
         <div className="flex gap-2">
+          <Button variant="outline" size="sm" onClick={openDrive}>
+            <HardDrive className="h-4 w-4 mr-2" />Google Drive
+          </Button>
           <Dialog open={urlOpen} onOpenChange={setUrlOpen}>
             <DialogTrigger asChild>
               <Button variant="outline" size="sm"><Globe className="h-4 w-4 mr-2" />Import URL</Button>
