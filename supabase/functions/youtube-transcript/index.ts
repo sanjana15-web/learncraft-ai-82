@@ -5,6 +5,10 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 
+class TranscriptUnavailableError extends Error {
+  code = "NO_TRANSCRIPT";
+}
+
 function extractVideoId(url: string): string | null {
   const patterns = [
     /(?:youtube\.com\/watch\?v=|youtu\.be\/|youtube\.com\/embed\/|youtube\.com\/shorts\/)([a-zA-Z0-9_-]{11})/,
@@ -107,7 +111,7 @@ async function fetchTranscript(videoId: string): Promise<{ title: string; transc
   }
 
   if (!transcript) {
-    throw new Error(
+    throw new TranscriptUnavailableError(
       "This video has no captions available. Try a video where the 'CC' button appears on YouTube, or use the PDF/Web URL importer instead."
     );
   }
@@ -142,8 +146,16 @@ serve(async (req) => {
       { headers: { ...corsHeaders, "Content-Type": "application/json" } },
     );
   } catch (e) {
-    console.error("youtube-transcript error:", e);
     const msg = e instanceof Error ? e.message : "Failed to fetch transcript";
+
+    if (e instanceof TranscriptUnavailableError) {
+      return new Response(JSON.stringify({ error: msg, code: e.code, recoverable: true }), {
+        status: 200,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    console.error("youtube-transcript error:", e);
     return new Response(JSON.stringify({ error: msg }), {
       status: 500,
       headers: { ...corsHeaders, "Content-Type": "application/json" },
