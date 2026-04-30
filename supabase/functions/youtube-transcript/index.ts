@@ -42,6 +42,40 @@ function parseTimedText(xml: string): string {
   return texts.join(" ").replace(/\s+/g, " ").trim();
 }
 
+function extractJsonObject(html: string, marker: string): string | null {
+  const markerIndex = html.indexOf(marker);
+  if (markerIndex === -1) return null;
+
+  const start = html.indexOf("{", markerIndex);
+  if (start === -1) return null;
+
+  let depth = 0;
+  let inString = false;
+  let escaped = false;
+
+  for (let i = start; i < html.length; i++) {
+    const char = html[i];
+
+    if (inString) {
+      if (escaped) {
+        escaped = false;
+      } else if (char === "\\") {
+        escaped = true;
+      } else if (char === '"') {
+        inString = false;
+      }
+      continue;
+    }
+
+    if (char === '"') inString = true;
+    if (char === "{") depth++;
+    if (char === "}") depth--;
+    if (depth === 0) return html.slice(start, i + 1);
+  }
+
+  return null;
+}
+
 async function tryFetchFromWatchPage(videoId: string): Promise<{ title: string; transcript: string } | null> {
   const pageRes = await fetch(`https://www.youtube.com/watch?v=${videoId}&hl=en`, {
     headers: {
@@ -54,14 +88,16 @@ async function tryFetchFromWatchPage(videoId: string): Promise<{ title: string; 
   const html = await pageRes.text();
 
   const titleMatch = html.match(/<meta name="title" content="([^"]+)"/) || html.match(/<title>([^<]+)<\/title>/);
-  const title = titleMatch ? decodeHtml(titleMatch[1].replace(/ - YouTube$/, "")) : `YouTube Video ${videoId}`;
+  let title = titleMatch ? decodeHtml(titleMatch[1].replace(/ - YouTube$/, "")) : `YouTube Video ${videoId}`;
 
-  const captionMatch = html.match(/"captionTracks":(\[.*?\])/);
-  if (!captionMatch) return { title, transcript: "" };
+  const playerJson = extractJsonObject(html, "ytInitialPlayerResponse");
+  if (!playerJson) return { title, transcript: "" };
 
   let tracks: Array<{ baseUrl: string; languageCode: string; kind?: string }>;
   try {
-    tracks = JSON.parse(captionMatch[1].replace(/\\u0026/g, "&"));
+    const player = JSON.parse(playerJson);
+    title = player.videoDetails?.title ?? title;
+    tracks = player.captions?.playerCaptionsTracklistRenderer?.captionTracks ?? [];
   } catch {
     return { title, transcript: "" };
   }
