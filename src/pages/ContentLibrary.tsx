@@ -187,7 +187,14 @@ export default function ContentLibrary() {
         body: { url: trimmed },
       });
       if (error) throw error;
-      if (data?.error) throw new Error(data.error);
+      if (data?.error) {
+        if (data.recoverable || data.code === "NO_TRANSCRIPT") {
+          toast.warning(data.error);
+          return;
+        }
+        throw new Error(data.error);
+      }
+      if (!data?.content?.trim()) throw new Error("No importable content was found at this URL");
       const { error: insertError } = await supabase.from("content_sources").insert({
         user_id: user.id,
         title: data.title || trimmed,
