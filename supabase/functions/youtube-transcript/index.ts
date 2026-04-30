@@ -43,7 +43,11 @@ async function fetchTranscript(videoId: string): Promise<{ title: string; transc
 
   // Find captionTracks JSON in the page
   const captionMatch = html.match(/"captionTracks":(\[.*?\])/);
-  if (!captionMatch) throw new Error("No captions/transcript available for this video");
+  if (!captionMatch) {
+    throw new Error(
+      "This video has no captions or transcript available. Try a video that shows the 'CC' (closed captions) button on YouTube."
+    );
+  }
 
   let tracks: Array<{ baseUrl: string; languageCode: string; kind?: string }>;
   try {
@@ -60,7 +64,13 @@ async function fetchTranscript(videoId: string): Promise<{ title: string; transc
     tracks.find((t) => t.languageCode?.startsWith("en")) ||
     tracks[0];
 
-  const xmlRes = await fetch(track.baseUrl);
+  // Force English translation if track isn't English (helps with ASR/auto-generated tracks)
+  let baseUrl = track.baseUrl;
+  if (!track.languageCode?.startsWith("en")) {
+    baseUrl += "&tlang=en";
+  }
+
+  const xmlRes = await fetch(baseUrl);
   if (!xmlRes.ok) throw new Error(`Failed to fetch caption track (${xmlRes.status})`);
   const xml = await xmlRes.text();
 
