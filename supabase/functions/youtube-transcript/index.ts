@@ -27,54 +27,7 @@ function decodeHtml(s: string): string {
     .replace(/&#(\d+);/g, (_, n) => String.fromCharCode(parseInt(n, 10)));
 }
 
-async function fetchTranscript(videoId: string): Promise<{ title: string; transcript: string }> {
-  // Fetch the video page to get caption tracks + title
-  const pageRes = await fetch(`https://www.youtube.com/watch?v=${videoId}`, {
-    headers: {
-      "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
-      "Accept-Language": "en-US,en;q=0.9",
-    },
-  });
-  if (!pageRes.ok) throw new Error(`Failed to load video page (${pageRes.status})`);
-  const html = await pageRes.text();
-
-  const titleMatch = html.match(/<meta name="title" content="([^"]+)"/) || html.match(/<title>([^<]+)<\/title>/);
-  const title = titleMatch ? decodeHtml(titleMatch[1].replace(/ - YouTube$/, "")) : `YouTube Video ${videoId}`;
-
-  // Find captionTracks JSON in the page
-  const captionMatch = html.match(/"captionTracks":(\[.*?\])/);
-  if (!captionMatch) {
-    throw new Error(
-      "This video has no captions or transcript available. Try a video that shows the 'CC' (closed captions) button on YouTube."
-    );
-  }
-
-  let tracks: Array<{ baseUrl: string; languageCode: string; kind?: string }>;
-  try {
-    tracks = JSON.parse(captionMatch[1].replace(/\\u0026/g, "&"));
-  } catch {
-    throw new Error("Failed to parse caption tracks");
-  }
-  if (!tracks.length) throw new Error("No caption tracks found");
-
-  // Prefer English manual captions, then any English, then first available
-  const track =
-    tracks.find((t) => t.languageCode === "en" && !t.kind) ||
-    tracks.find((t) => t.languageCode === "en") ||
-    tracks.find((t) => t.languageCode?.startsWith("en")) ||
-    tracks[0];
-
-  // Force English translation if track isn't English (helps with ASR/auto-generated tracks)
-  let baseUrl = track.baseUrl;
-  if (!track.languageCode?.startsWith("en")) {
-    baseUrl += "&tlang=en";
-  }
-
-  const xmlRes = await fetch(baseUrl);
-  if (!xmlRes.ok) throw new Error(`Failed to fetch caption track (${xmlRes.status})`);
-  const xml = await xmlRes.text();
-
-  // Parse <text> nodes
+function parseTimedText(xml: string): string {
   const texts: string[] = [];
   const re = /<text[^>]*>([\s\S]*?)<\/text>/g;
   let m: RegExpExecArray | null;
@@ -82,9 +35,82 @@ async function fetchTranscript(videoId: string): Promise<{ title: string; transc
     const cleaned = decodeHtml(m[1].replace(/<[^>]+>/g, "")).trim();
     if (cleaned) texts.push(cleaned);
   }
+  return texts.join(" ").replace(/\s+/g, " ").trim();
+}
 
-  const transcript = texts.join(" ").replace(/\s+/g, " ").trim();
-  if (!transcript) throw new Error("Transcript is empty");
+async function tryFetchFromWatchPage(videoId: string): Promise<{ title: string; transcript: string } | null> {
+  const pageRes = await fetch(`https://www.youtube.com/watch?v=${videoId}&hl=en`, {
+    headers: {
+      "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+      "Accept-Language": "en-US,en;q=0.9",
+      "Cookie": "CONSENT=YES+1",
+    },
+  });
+  if (!pageRes.ok) return null;
+  const html = await pageRes.text();
+
+  const titleMatch = html.match(/<meta name="title" content="([^"]+)"/) || html.match(/<title>([^<]+)<\/title>/);
+  const title = titleMatch ? decodeHtml(titleMatch[1].replace(/ - YouTube$/, "")) : `YouTube Video ${videoId}`;
+
+  const captionMatch = html.match(/"captionTracks":(\[.*?\])/);
+  if (!captionMatch) return { title, transcript: "" };
+
+  let tracks: Array<{ baseUrl: string; languageCode: string; kind?: string }>;
+  try {
+    tracks = JSON.parse(captionMatch[1].replace(/\\u0026/g, "&"));
+  } catch {
+    return { title, transcript: "" };
+  }
+  if (!tracks.length) return { title, transcript: "" };
+
+  const track =
+    tracks.find((t) => t.languageCode === "en" && !t.kind) ||
+    tracks.find((t) => t.languageCode === "en") ||
+    tracks.find((t) => t.languageCode?.startsWith("en")) ||
+    tracks[0];
+
+  let baseUrl = track.baseUrl;
+  if (!track.languageCode?.startsWith("en")) baseUrl += "&tlang=en";
+
+  const xmlRes = await fetch(baseUrl);
+  if (!xmlRes.ok) return { title, transcript: "" };
+  return { title, transcript: parseTimedText(await xmlRes.text()) };
+}
+
+async function tryFetchFromTimedText(videoId: string): Promise<string> {
+  // Fallback: directly query YouTube's timedtext endpoint
+  // Try manual English first, then ASR (auto-generated) English
+  const attempts = [
+    `https://www.youtube.com/api/timedtext?lang=en&v=${videoId}&fmt=srv1`,
+    `https://www.youtube.com/api/timedtext?lang=en&v=${videoId}&kind=asr&fmt=srv1`,
+  ];
+  for (const url of attempts) {
+    try {
+      const res = await fetch(url);
+      if (!res.ok) continue;
+      const xml = await res.text();
+      if (!xml.trim()) continue;
+      const text = parseTimedText(xml);
+      if (text) return text;
+    } catch { /* try next */ }
+  }
+  return "";
+}
+
+async function fetchTranscript(videoId: string): Promise<{ title: string; transcript: string }> {
+  const watchResult = await tryFetchFromWatchPage(videoId).catch(() => null);
+  let title = watchResult?.title ?? `YouTube Video ${videoId}`;
+  let transcript = watchResult?.transcript ?? "";
+
+  if (!transcript) {
+    transcript = await tryFetchFromTimedText(videoId);
+  }
+
+  if (!transcript) {
+    throw new Error(
+      "This video has no captions available. Try a video where the 'CC' button appears on YouTube, or use the PDF/Web URL importer instead."
+    );
+  }
 
   return { title, transcript };
 }
