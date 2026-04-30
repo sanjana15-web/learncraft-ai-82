@@ -103,7 +103,7 @@ async function tryFetchFromTimedText(videoId: string): Promise<string> {
 
 async function fetchTranscript(videoId: string): Promise<{ title: string; transcript: string }> {
   const watchResult = await tryFetchFromWatchPage(videoId).catch(() => null);
-  let title = watchResult?.title ?? `YouTube Video ${videoId}`;
+  const title = watchResult?.title ?? `YouTube Video ${videoId}`;
   let transcript = watchResult?.transcript ?? "";
 
   if (!transcript) {
